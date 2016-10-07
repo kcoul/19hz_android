@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">nineteenhz</string>
+    <string name="title_section1">San Francisco Bay Area</string>
+    <string name="title_section2">Los Angeles</string>
+    <string name="title_section3">Atlanta</string>
+    <string name="title_section4">Texas</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_example">Filters</string>
+    <string name="action_settings">Settings</string>
+
+</resources>
