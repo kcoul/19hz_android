@@ -1,16 +1,23 @@
 package info.nineteenhz;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import android.support.v7.app.ActionBarActivity;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -27,7 +34,7 @@ import android.widget.Toast;
  * See the <a href="https://developer.android.com/design/patterns/navigation-drawer.html#Interaction">
  * design guidelines</a> for a complete explanation of the behaviors implemented here.
  */
-public class NavigationDrawerFragment extends Fragment {
+public class NavigationDrawerFragment extends Fragment implements MultiChoiceListDialogListener {
 
     /**
      * Remember the position of the selected item.
@@ -57,7 +64,73 @@ public class NavigationDrawerFragment extends Fragment {
     private int mCurrentSelectedPosition = 0;
     private boolean mFromSavedInstanceState;
     private boolean mUserLearnedDrawer;
-
+    
+    private String[] filterList = new String[] 
+    		{ 
+    	"acid jazz",
+    	"ambient",
+    	"bass",
+    	"bass music",
+    	"bassline",
+    	"bassline house",
+    	"big room",
+    	"breakbeat",
+    	"breaks",
+    	"chiptune",
+    	"club music",
+    	"dark electro",
+    	"deep house",
+    	"disco",
+    	"downtempo",
+    	"drum and bass",
+    	"dub",
+    	"dubstep",
+    	"EBM",
+    	"electro",
+    	"electro house",
+    	"experimental",
+    	"footwork",
+    	"funk",
+    	"funky house",
+    	"future bass",
+    	"future beats",
+    	"future jazz",
+    	"gabber",
+    	"glitch",
+    	"glitch-hop",
+    	"goth",
+    	"grime",
+    	"hard trance",
+    	"hardcore",
+    	"hardstyle",
+    	"hardtek",
+    	"hip-hop",
+    	"house",
+    	"IDM",
+    	"industrial",
+    	"jungle",
+    	"lounge",
+    	"minimal",
+    	"new wave",
+    	"nu-disco",
+    	"pop house",
+    	"progressive trance",
+    	"psytrance",
+    	"soul",
+    	"synthpop",
+    	"tech house",
+    	"techno",
+    	"trance",
+    	"trap",
+    	"tribal house",
+    	"trip-hop",
+    	"turntablism",
+    	"UK garage"  	
+    		};
+    
+    private ArrayList<Integer> selectedItemsIndexList = new ArrayList<Integer>();
+    private boolean[] isSelectedArray = new boolean[62];
+  
     public NavigationDrawerFragment() {
     }
 
@@ -65,6 +138,11 @@ public class NavigationDrawerFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        for (int i = 0; i < isSelectedArray.length; i++)
+        {
+        	isSelectedArray[i] = false;
+        }
+        
         // Read in the flag indicating whether or not the user has demonstrated awareness of the
         // drawer. See PREF_USER_LEARNED_DRAWER for details.
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
@@ -249,13 +327,69 @@ public class NavigationDrawerFragment extends Fragment {
         }
 
         if (item.getItemId() == R.id.action_example) {
-            Toast.makeText(getActivity(), "Open dialog to set filters.", Toast.LENGTH_SHORT).show();
+        	
+        	AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        	builder.setTitle("Set Music Filters").setMultiChoiceItems(filterList, isSelectedArray,
+        			new DialogInterface.OnMultiChoiceClickListener() {
+        				@Override
+        				public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+        					if (isChecked) {
+        						selectedItemsIndexList.add(which);
+        					}
+        					else if (selectedItemsIndexList.contains(which)) {
+        						selectedItemsIndexList.remove(Integer.valueOf(which));
+        					}
+        				}
+        	}).setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        		@Override
+        		public void onClick(DialogInterface dialog, int id) {
+        			onOkay(selectedItemsIndexList);
+        		}
+        	}).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        		@Override
+        		public void onClick(DialogInterface dialog, int id) {
+        			onCancel();
+        		}
+        	});
+        	AlertDialog dialog = builder.create();
+        	dialog.show();
+        	
+            //Toast.makeText(getActivity(), "Opened dialog to set filters.", Toast.LENGTH_SHORT).show();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    @SuppressLint("NewApi")
+	@Override
+    public void onOkay(ArrayList<Integer> arrayList)
+    {
+    	if (arrayList.size() != 0)
+    	{
+    		for (int i = 0; i < arrayList.size(); i++ )
+    		{
+    			String musicStyle = filterList[arrayList.get(i)];
+    			MainActivity.mTableMainLayout.musicSelections.clear();
+    			MainActivity.mTableMainLayout.musicSelections.add(musicStyle);
+    			//Log.e("SELECTED STYLE", musicStyle);   			
+    		}
+    		
+    		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+    		SharedPreferences.Editor edit = prefs.edit();
+    		edit.putStringSet("MUSICPREFS", new HashSet<String>(MainActivity.mTableMainLayout.musicSelections));
+    		edit.commit();
+    		
+    		MainActivity.mTableMainLayout.refetchTable();
+    	}
+    }
+    
+	@Override
+	public void onCancel() {
+		// TODO Auto-generated method stub
+		
+	}
+    
     /**
      * Per the navigation drawer design guidelines, updates the action bar to show the global app
      * 'context', rather than just what's in the current screen.

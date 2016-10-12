@@ -31,7 +31,7 @@ import com.Table.TableMainLayout;
      */
     private CharSequence mTitle;
     static Context mContext;
-    
+    static TableMainLayout mTableMainLayout;
     
     
     @Override
@@ -147,8 +147,9 @@ import com.Table.TableMainLayout;
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
+        	mTableMainLayout = new TableMainLayout(getActivity(), url, this.getActivity());
         	
-        	return new TableMainLayout(getActivity(), url, this.getActivity());
+        	return mTableMainLayout;
         }
 
         @Override

@@ -3,6 +3,7 @@ package com.Table;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,6 +19,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -30,12 +32,14 @@ import android.widget.TextView;
 
 public class TableMainLayout extends RelativeLayout {
 
-	public final String TAG = "TableMainLayout.java";
+	public final String TAG = "MAIN TABLE";
 	
 	public String mUrl;
 	
+	public ArrayList<String> musicSelections; 
+	
 	// set the header titles
-	String headers[] = {
+	private String headers[] = {
 		" Date & \n Time ",
 		" Name & Venue ",
 		" Styles & Tags ",
@@ -71,6 +75,10 @@ public class TableMainLayout extends RelativeLayout {
 		this.context = context;
 		this.activity = activity;
 		
+		musicSelections = new ArrayList<String>(
+				PreferenceManager.getDefaultSharedPreferences(
+						context).getStringSet("MUSICPREFS", new HashSet<String>()));
+		
 		mUrl = url;
 		new FetchTask().execute();
 		
@@ -103,6 +111,11 @@ public class TableMainLayout extends RelativeLayout {
 			
 		this.generateTableC_AndTable_B();	
 		this.resizeBodyTableRowHeight();
+	}
+	
+	public void refetchTable()
+	{
+		new FetchTask().execute();
 	}
 	
 	// initalized components 
@@ -213,8 +226,11 @@ public class TableMainLayout extends RelativeLayout {
 	// generate table row of table C and table D
 	private void generateTableC_AndTable_B(){
 		
+		this.tableC.removeAllViews();
+		this.tableD.removeAllViews();
+		
 		for(SampleObject sampleObject : this.sampleObjects){
-			
+						
 			TableRow tableRowForTableC = this.tableRowForTableC(sampleObject);
 			TableRow taleRowForTableD = this.tableRowForTableD(sampleObject);
 			
@@ -242,7 +258,7 @@ public class TableMainLayout extends RelativeLayout {
 	
 	TableRow tableRowForTableD(SampleObject sampleObject){
 
-		TableRow taleRowForTableD = new TableRow(this.context);
+		TableRow tableRowForTableD = new TableRow(this.context);
 		
 		int loopCount = ((TableRow)this.tableB.getChildAt(0)).getChildCount();
 		final String info[] = {
@@ -277,10 +293,10 @@ public class TableMainLayout extends RelativeLayout {
                 });
 			}
 			
-			taleRowForTableD.addView(textViewB,params);
+			tableRowForTableD.addView(textViewB,params);
 		}
 		
-		return taleRowForTableD;
+		return tableRowForTableD;
 		
 	}
 	
@@ -482,6 +498,8 @@ public class TableMainLayout extends RelativeLayout {
   	  protected void onPostExecute(String result) {        
 		    if (doc != null)
 		    {		    	  		    	
+		    	sampleObjects.clear();
+		    	
 		    	Element table = doc.select("table.table").first();
 		    			    	
 		        Elements oddEvents = table.select("tr.odd");
@@ -528,10 +546,22 @@ public class TableMainLayout extends RelativeLayout {
 	  		  		    		i++;
 	  		  		    	}
 				        	
-	  		  		    	SampleObject sampleObject = new SampleObject(
-	  		  		    	mDateAndTime, mEventTitleAtVenue, mTags,
-	  			        	mPriceAndAge, mOrganizers, mLink1, mLink2);		        		
-	  		  		    	sampleObjects.add(sampleObject);
+	  		  		    	boolean wouldEnjoyEvent = true;
+	  		  		    	
+	  		  		    	for (String musicSelection : musicSelections)
+	  		  		    	{
+	  		  		    		if (mTags.contains(musicSelection))
+	  		  		    			break;
+	  		  		    		wouldEnjoyEvent = false;
+	  		  		    	}
+	  		  		    	
+	  		  		    	if (wouldEnjoyEvent)
+	  		  		    	{
+	  		  		    		SampleObject sampleObject = new SampleObject(
+	  		  		    				mDateAndTime, mEventTitleAtVenue, mTags,
+	  		  		    				mPriceAndAge, mOrganizers, mLink1, mLink2);		        		
+	  		  		    		sampleObjects.add(sampleObject);
+	  		  		    	}
 		        	}
 		        }
 		        	if (oddIterator.hasNext())
@@ -570,7 +600,18 @@ public class TableMainLayout extends RelativeLayout {
 	  		  		    		j++;
 	  		  		    	}
 	  		  		    	
-		  		  		    SampleObject sampleObject = new SampleObject(
+	  		  		    	boolean wouldEnjoyEvent = true;
+	  		  		    	
+	  		  		    	for (String musicSelection : musicSelections)
+	  		  		    	{
+	  		  		    		if (mTags.contains(musicSelection))
+	  		  		    			break;
+	  		  		    		wouldEnjoyEvent = false;
+	  		  		    	}
+	  		  		    	
+	  		  		    	if (wouldEnjoyEvent)
+	  		  		    	{
+	  		  		    		SampleObject sampleObject = new SampleObject(
 			  		  	        	mDateAndTime,
 			  			        	mEventTitleAtVenue,
 			  			        	mTags,
@@ -578,6 +619,7 @@ public class TableMainLayout extends RelativeLayout {
 			  			        	mOrganizers,
 			  			        	mLink1, mLink2);		        		
 				        		sampleObjects.add(sampleObject);
+	  		  		    	}
 		        		}
 		        	}  		        	
 		        }
