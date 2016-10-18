@@ -519,7 +519,7 @@ public class TableMainLayout extends RelativeLayout {
 				        	String organizers = "";
 				        	String facebookLink = "";
 				        	String tixPageLink = "";
-				        	boolean hadLinkInTitle = false;
+
 		        			int i = 0;
 		        			
 	  		  		    	for (Element evenEventElement : evenEventElements)
@@ -531,7 +531,6 @@ public class TableMainLayout extends RelativeLayout {
   		  		    				eventTitleAtVenue = evenEventElement.text();
   		  		    				//Assume this is the facebook link for now
   		  		    				facebookLink = evenEventElement.select("a").first().attr("href");
-  		  		    				hadLinkInTitle = true;
   		  		    			}
   		  		    			if (i == 2)
   		  		    				tags = evenEventElement.text(); 
@@ -540,13 +539,12 @@ public class TableMainLayout extends RelativeLayout {
   		  		    			if (i == 4)
   		  		    				organizers = evenEventElement.text(); 
   		  		    			if (i == 5 && evenEventElement.select("a").first() != null)
-  		  		    				if (hadLinkInTitle)
-  		  		    				{
-  		  		    					//If there are two links, first one was tixPageLink
-  		  		    					tixPageLink = facebookLink;
-  		  		    					//This one is facebook link
-  		  		    					facebookLink = evenEventElement.select("a").first().attr("href");
-  		  		    				}
+	  		    				{
+	  		    					//If there are two links, first one was tixPageLink
+	  		    					tixPageLink = facebookLink;
+	  		    					//This one is facebook link
+	  		    					facebookLink = evenEventElement.select("a").first().attr("href");
+	  		    				}
 	  		  		    		
 	  		  		    		i++;
 	  		  		    	}
@@ -581,8 +579,8 @@ public class TableMainLayout extends RelativeLayout {
 				        	String organizers = "";
 				        	String facebookLink = "";
 				        	String tixPageLink = "";
-				        	boolean hadLinkInTitle = false;
-							int j = 0;
+
+				        	int j = 0;
 		        			
 	  		  		    	for (Element oddEventElement : oddEventElements)
 	  		  		    	{	
@@ -591,8 +589,8 @@ public class TableMainLayout extends RelativeLayout {
   		  		    			if (j == 1)
   		  		    			{
   		  		    				eventTitleAtVenue = oddEventElement.text();
+  		  		    				//Assume this is the facebook link for now
   		  		    				facebookLink = oddEventElement.select("a").first().attr("href");
-  		  		    				hadLinkInTitle = true;
   		  		    			}
   		  		    			if (j == 2)
   		  		    				tags = oddEventElement.text();  
@@ -601,13 +599,12 @@ public class TableMainLayout extends RelativeLayout {
   		  		    			if (j == 4)
   		  		    				organizers = oddEventElement.text();  
   		  		    			if (j == 5 && oddEventElement.select("a").first() != null)
-  		  		    				if (hadLinkInTitle)
-  		  		    				{
-  		  		    					//If there are two links, first one was tixPageLink
-  		  		    					tixPageLink = facebookLink;
-  		  		    					//This one is facebook link
-  		  		    					facebookLink = oddEventElement.select("a").first().attr("href");
-  		  		    				}
+	  		    				{
+	  		    					//If there are two links, first one was tixPageLink
+	  		    					tixPageLink = facebookLink;
+	  		    					//This one is facebook link
+	  		    					facebookLink = oddEventElement.select("a").first().attr("href");
+	  		    				}
 	  		  		    			  		    		
 	  		  		    		j++;
 	  		  		    	}

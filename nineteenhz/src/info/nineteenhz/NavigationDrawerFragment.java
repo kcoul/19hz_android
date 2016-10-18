@@ -138,6 +138,7 @@ public class NavigationDrawerFragment extends Fragment implements MultiChoiceLis
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //Assume false this early in life cycle
         for (int i = 0; i < isSelectedArray.length; i++)
         {
         	isSelectedArray[i] = false;
@@ -326,7 +327,20 @@ public class NavigationDrawerFragment extends Fragment implements MultiChoiceLis
             return true;
         }
 
+        //This is the filters button
         if (item.getItemId() == R.id.action_example) {
+        	
+        	//TODO: Persist this boolean array and load it back up again 
+        	// instead of calculating the booleans from persisted string arraylist
+        	int i = 0;
+        	for (String filter : filterList)
+        	{
+        		if (MainActivity.mTableMainLayout.musicSelections.contains(filter))
+        		{
+        			isSelectedArray[i] = true;
+        		}
+        		i++;
+        	}
         	
         	AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         	builder.setTitle("Set Music Filters").setMultiChoiceItems(filterList, isSelectedArray,
