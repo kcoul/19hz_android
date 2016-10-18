@@ -45,26 +45,25 @@ public class TableMainLayout extends RelativeLayout {
 		" Styles & Tags ",
 		" Price & Age ",
 		" Organizers ",
-		" Link One ",
-		" Link Two "
+		" Facebook ",
+		" Tix / Page "
 	};
 	
-	TableLayout tableA;
-	TableLayout tableB;
-	TableLayout tableC;
-	TableLayout tableD;
+	TableLayout dateAndTimeHeaderTable;
+	TableLayout eventInfoHeaderTable;
+	TableLayout dateAndTimeTable;
+	TableLayout eventInfoTable;
 	
-	HorizontalScrollView horizontalScrollViewB;
-	HorizontalScrollView horizontalScrollViewD;
+	HorizontalScrollView eventInfoHeaderHorizontalScrollView;
+	HorizontalScrollView eventInfoTableHorizontalScrollView;
 
-	ScrollView scrollViewC;
-	ScrollView scrollViewD;
+	ScrollView dateAndTimeTableScrollView;
+	ScrollView eventInfoTableScrollView;
 	
-	Context context;
-	Activity activity;
+	Context mContext;
+	Activity mActivity;
 	
-	List<SampleObject> sampleObjects = new ArrayList<SampleObject>();
-	//= this.sampleObjects();
+	List<EventEntry> eventEntries = new ArrayList<EventEntry>();
 	
 	int headerCellsWidth[] = new int[headers.length];
 	
@@ -72,238 +71,226 @@ public class TableMainLayout extends RelativeLayout {
 		
 		super(context);
 		
-		this.context = context;
-		this.activity = activity;
+		mContext = context;
+		mActivity = activity;
 		
 		musicSelections = new ArrayList<String>(
 				PreferenceManager.getDefaultSharedPreferences(
 						context).getStringSet("MUSICPREFS", new HashSet<String>()));
 		
 		mUrl = url;
+		
+		//TODO: This is an expensive chore, we need to fetch this from localDB
 		new FetchTask().execute();
 		
-		// initialize the main components (TableLayouts, HorizontalScrollView, ScrollView)
-		this.initComponents();
-		this.setComponentsId();
-		this.setScrollViewAndHorizontalScrollViewTag();
+		initComponents();
+		setComponentIds();
+		setAllScrollViewTags();
 		
+		eventInfoHeaderHorizontalScrollView.addView(eventInfoHeaderTable);
+		dateAndTimeTableScrollView.addView(dateAndTimeTable);
+		eventInfoTableScrollView.addView(eventInfoTableHorizontalScrollView);
+		eventInfoTableHorizontalScrollView.addView(eventInfoTable);
 		
-		// no need to assemble component A, since it is just a table
-		this.horizontalScrollViewB.addView(this.tableB);
+		addComponentsToMainLayout();
+		setBackgroundColor(Color.WHITE);
 		
-		this.scrollViewC.addView(this.tableC);
+		addDateAndTimeHeader();
+		addEventInfoHeader();	
+		resizeHeaderHeight();
 		
-		this.scrollViewD.addView(this.horizontalScrollViewD);
-		this.horizontalScrollViewD.addView(this.tableD);
-		
-		// add the components to be part of the main layout
-		this.addComponentToMainLayout();
-		this.setBackgroundColor(Color.WHITE);
-		
-		
-		// add some table rows
-		this.addTableRowToTableA();
-		this. addTableRowToTableB();
-		
-		this.resizeHeaderHeight();
-		
-		this.getTableRowHeaderCellWidth();
+		getTableRowHeaderCellWidth();
 			
-		this.generateTableC_AndTable_B();	
-		this.resizeBodyTableRowHeight();
+		generateEventEntryTables();	
+		resizeBodyTableRowHeight();
 	}
 	
+	//TODO: Sync this to server updates
 	public void refetchTable()
 	{
 		new FetchTask().execute();
 	}
 	
-	// initalized components 
 	private void initComponents(){
 		
-		this.tableA = new TableLayout(this.context); 
-		this.tableB = new TableLayout(this.context); 
-		this.tableC = new TableLayout(this.context); 
-		this.tableD = new TableLayout(this.context);
+		dateAndTimeHeaderTable = new TableLayout(mContext); 
+		eventInfoHeaderTable = new TableLayout(mContext); 
+		dateAndTimeTable = new TableLayout(mContext); 
+		eventInfoTable = new TableLayout(mContext);
 		
-		this.horizontalScrollViewB = new MyHorizontalScrollView(this.context);
-		this.horizontalScrollViewD = new MyHorizontalScrollView(this.context);
+		eventInfoHeaderHorizontalScrollView = new CustomHorizontalScrollView(mContext);
+		eventInfoTableHorizontalScrollView = new CustomHorizontalScrollView(mContext);
 		
-		this.scrollViewC = new MyScrollView(this.context);
-		this.scrollViewD = new MyScrollView(this.context);
+		dateAndTimeTableScrollView = new CustomScrollView(mContext);
+		eventInfoTableScrollView = new CustomScrollView(mContext);
 		
-		this.tableA.setBackgroundColor(Color.GREEN);
-		this.horizontalScrollViewB.setBackgroundColor(Color.LTGRAY);
+		dateAndTimeHeaderTable.setBackgroundColor(Color.GREEN);
+		eventInfoHeaderHorizontalScrollView.setBackgroundColor(Color.LTGRAY);
 		
 	}
 	
-	// set essential component IDs
-	private void setComponentsId(){
-		this.tableA.setId(1);
-		this.horizontalScrollViewB.setId(2);
-		this.scrollViewC.setId(3);
-		this.scrollViewD.setId(4);
+	private void setComponentIds(){
+		dateAndTimeHeaderTable.setId(1);
+		eventInfoHeaderHorizontalScrollView.setId(2);
+		dateAndTimeTableScrollView.setId(3);
+		eventInfoTableScrollView.setId(4);
 	}
 	
 	// set tags for some horizontal and vertical scroll view
-	private void setScrollViewAndHorizontalScrollViewTag(){
+	private void setAllScrollViewTags(){
 		
-		this.horizontalScrollViewB.setTag("horizontal scroll view b");
-		this.horizontalScrollViewD.setTag("horizontal scroll view d");
-		
-		this.scrollViewC.setTag("scroll view c");
-		this.scrollViewD.setTag("scroll view d");
+		eventInfoHeaderHorizontalScrollView.setTag("eventInfoHeaderHorizontalScrollView");
+		eventInfoTableHorizontalScrollView.setTag("eventInfoTableHorizontalScrollView");		
+		dateAndTimeTableScrollView.setTag("dateAndTimeTableScrollView");
+		eventInfoTableScrollView.setTag("eventInfoTableScrollView");
 	}
 	
-	// we add the components here in our TableMainLayout
-	private void addComponentToMainLayout(){
+	// Relative Layout magic
+	private void addComponentsToMainLayout(){
 		
 		// RelativeLayout params were very useful here
 		// the addRule method is the key to arrange the components properly
-		RelativeLayout.LayoutParams componentB_Params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
-		componentB_Params.addRule(RelativeLayout.RIGHT_OF, this.tableA.getId());
+		RelativeLayout.LayoutParams eventInfoHeaderParams = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+		eventInfoHeaderParams.addRule(RelativeLayout.RIGHT_OF, dateAndTimeHeaderTable.getId());
 		
-		RelativeLayout.LayoutParams componentC_Params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
-		componentC_Params.addRule(RelativeLayout.BELOW, this.tableA.getId());
+		RelativeLayout.LayoutParams dateAndTimeTableParams = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+		dateAndTimeTableParams.addRule(RelativeLayout.BELOW, dateAndTimeHeaderTable.getId());
 		
-		RelativeLayout.LayoutParams componentD_Params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
-		componentD_Params.addRule(RelativeLayout.RIGHT_OF, this.scrollViewC.getId());
-		componentD_Params.addRule(RelativeLayout.BELOW, this.horizontalScrollViewB.getId());
+		RelativeLayout.LayoutParams eventInfoTableParams = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
+		eventInfoTableParams.addRule(RelativeLayout.RIGHT_OF, dateAndTimeTableScrollView.getId());
+		eventInfoTableParams.addRule(RelativeLayout.BELOW, eventInfoHeaderHorizontalScrollView.getId());
 		
-		// 'this' is a relative layout, 
-		// we extend this table layout as relative layout as seen during the creation of this class
-		this.addView(this.tableA);
-		this.addView(this.horizontalScrollViewB, componentB_Params);
-		this.addView(this.scrollViewC, componentC_Params);
-		this.addView(this.scrollViewD, componentD_Params);
+		addView(dateAndTimeHeaderTable);
+		addView(eventInfoHeaderHorizontalScrollView, eventInfoHeaderParams);
+		addView(dateAndTimeTableScrollView, dateAndTimeTableParams);
+		addView(eventInfoTableScrollView, eventInfoTableParams);
 			
 	}
 	
 
 	
-	private void addTableRowToTableA(){
-		this.tableA.addView(this.componentATableRow());
+	private void addDateAndTimeHeader(){
+		dateAndTimeHeaderTable.addView(dateAndTimeHeader());
 	}
 	
-	private void addTableRowToTableB(){
-		this.tableB.addView(this.componentBTableRow());
+	private void addEventInfoHeader(){
+		eventInfoHeaderTable.addView(eventInfoHeader());
 	}
 	
 	// generate table row of table A
-	TableRow componentATableRow(){
+	TableRow dateAndTimeHeader(){
 		
-		TableRow componentATableRow = new TableRow(this.context);
-		TextView textView = this.headerTextView(this.headers[0]);
-		componentATableRow.addView(textView);
+		TableRow dateAndTimeHeader = new TableRow(mContext);
+		TextView textView = headerTextView(headers[0]);
+		dateAndTimeHeader.addView(textView);
 		
-		return componentATableRow;
+		return dateAndTimeHeader;
 	}
 	
 	// generate table row of table B
-	TableRow componentBTableRow(){
+	TableRow eventInfoHeader(){
 		
-		TableRow componentBTableRow = new TableRow(this.context);
-		int headerFieldCount = this.headers.length;
+		TableRow eventInfoHeader = new TableRow(mContext);
+		int headerFieldCount = headers.length;
 		
 		TableRow.LayoutParams params = new TableRow.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.MATCH_PARENT);
 		params.setMargins(2, 0, 0, 0);
 		
-		for(int x=0; x<(headerFieldCount-1); x++){
-			TextView textView = this.headerTextView(this.headers[x+1]);
+		for(int x=1; x<(headerFieldCount); x++){
+			TextView textView = headerTextView(headers[x]);
 			textView.setLayoutParams(params);
-			componentBTableRow.addView(textView);
+			eventInfoHeader.addView(textView);
 		}
 		
-		return componentBTableRow;
+		return eventInfoHeader;
 	}
 	
 	public void refreshTables()
 	{
-		this.generateTableC_AndTable_B();	
-		this.resizeBodyTableRowHeight();
+		generateEventEntryTables();	
+		resizeBodyTableRowHeight();
 	}
 	
-	// generate table row of table C and table D
-	private void generateTableC_AndTable_B(){
+	private void generateEventEntryTables(){
 		
-		this.tableC.removeAllViews();
-		this.tableD.removeAllViews();
+		dateAndTimeTable.removeAllViews();
+		eventInfoTable.removeAllViews();
 		
-		for(SampleObject sampleObject : this.sampleObjects){
+		for(EventEntry event : eventEntries){
 						
-			TableRow tableRowForTableC = this.tableRowForTableC(sampleObject);
-			TableRow taleRowForTableD = this.tableRowForTableD(sampleObject);
+			TableRow tableRowForDateAndTime = tableRowForDateAndTime(event);
+			TableRow tableRowForEventInfo = tableRowForEventInfo(event);
 			
-			tableRowForTableC.setBackgroundColor(Color.LTGRAY);
-			taleRowForTableD.setBackgroundColor(Color.LTGRAY);
+			tableRowForDateAndTime.setBackgroundColor(Color.LTGRAY);
+			tableRowForEventInfo.setBackgroundColor(Color.LTGRAY);
 			
-			this.tableC.addView(tableRowForTableC);
-			this.tableD.addView(taleRowForTableD);
+			dateAndTimeTable.addView(tableRowForDateAndTime);
+			eventInfoTable.addView(tableRowForEventInfo);
 			
 		}
 	}
 	
-	// a TableRow for table C
-	TableRow tableRowForTableC(SampleObject sampleObject){
+	TableRow tableRowForDateAndTime(EventEntry event){
 		
-		TableRow.LayoutParams params = new TableRow.LayoutParams( this.headerCellsWidth[0],LayoutParams.MATCH_PARENT);
+		TableRow.LayoutParams params = new TableRow.LayoutParams(headerCellsWidth[0],LayoutParams.MATCH_PARENT);
 		params.setMargins(0, 2, 0, 0);
 		
-		TableRow tableRowForTableC = new TableRow(this.context);
-		TextView textView = this.bodyTextView(sampleObject.mDateAndTime);
-		tableRowForTableC.addView(textView,params);
+		TableRow tableRowForDateAndTime = new TableRow(mContext);
+		TextView textView = bodyTextView(event.mDateAndTime);
+		tableRowForDateAndTime.addView(textView,params);
 		
-		return tableRowForTableC;
+		return tableRowForDateAndTime;
 	}
 	
-	TableRow tableRowForTableD(SampleObject sampleObject){
+	TableRow tableRowForEventInfo(EventEntry event){
 
-		TableRow tableRowForTableD = new TableRow(this.context);
+		TableRow tableRowForEventInfo = new TableRow(mContext);
 		
-		int loopCount = ((TableRow)this.tableB.getChildAt(0)).getChildCount();
+		int loopCount = ((TableRow)eventInfoHeaderTable.getChildAt(0)).getChildCount();
 		final String info[] = {
-			sampleObject.mEventTitleAtVenue,
-			sampleObject.mTags,
-			sampleObject.mPriceAndAge,
-			sampleObject.mOrganizers,
-			sampleObject.mLink1,
-			sampleObject.mLink2
+			event.mEventTitleAtVenue,
+			event.mTags,
+			event.mPriceAndAge,
+			event.mOrganizers,
+			event.mFacebookLink,
+			event.mTixPageLink
 		};
 		
 		for(int x=0 ; x<loopCount; x++){
-			TableRow.LayoutParams params = new TableRow.LayoutParams( headerCellsWidth[x+1],LayoutParams.MATCH_PARENT);
+			TableRow.LayoutParams params = new TableRow.LayoutParams(headerCellsWidth[x+1],LayoutParams.MATCH_PARENT);
 			params.setMargins(2, 2, 0, 0);
 			
-			TextView textViewB = this.bodyTextView(info[x]);
+			TextView textView = bodyTextView(info[x]);
 			
+			//Links to Facebook page, and Tickets/Other page
 			if (x == 4 || x == 5)
 			{
 				final int linkIndex = x;
 				
-				textViewB.setOnClickListener(new OnClickListener() {
+				textView.setOnClickListener(new OnClickListener() {
 					
                     @Override
                     public void onClick(View view)
                     {
                         Uri address= Uri.parse(info[linkIndex]);  
                         Intent browser= new Intent(Intent.ACTION_VIEW, address);  
-                        activity.startActivity(browser);  
+                        mActivity.startActivity(browser);  
                     }
 
                 });
 			}
 			
-			tableRowForTableD.addView(textViewB,params);
+			tableRowForEventInfo.addView(textView,params);
 		}
 		
-		return tableRowForTableD;
+		return tableRowForEventInfo;
 		
 	}
 	
 	// table cell standard TextView
 	TextView bodyTextView(String label){
 		
-		TextView bodyTextView = new TextView(this.context);
+		TextView bodyTextView = new TextView(mContext);
 		bodyTextView.setBackgroundColor(Color.WHITE);
 		bodyTextView.setText(label);
 		bodyTextView.setGravity(Gravity.CENTER);
@@ -315,7 +302,7 @@ public class TableMainLayout extends RelativeLayout {
 	// header standard TextView
 	TextView headerTextView(String label){
 		
-		TextView headerTextView = new TextView(this.context);
+		TextView headerTextView = new TextView(mContext);
 		headerTextView.setBackgroundColor(Color.WHITE);
 		headerTextView.setText(label);
 		headerTextView.setGravity(Gravity.CENTER);
@@ -327,63 +314,64 @@ public class TableMainLayout extends RelativeLayout {
 	// resizing TableRow height starts here
 	void resizeHeaderHeight() {
 		
-		TableRow productNameHeaderTableRow = (TableRow) this.tableA.getChildAt(0);
-		TableRow productInfoTableRow = (TableRow)  this.tableB.getChildAt(0);
+		TableRow productNameHeaderTableRow = (TableRow) dateAndTimeHeaderTable.getChildAt(0);
+		TableRow productInfoTableRow = (TableRow)  eventInfoHeaderTable.getChildAt(0);
 
-		int rowAHeight = this.viewHeight(productNameHeaderTableRow);
-		int rowBHeight = this.viewHeight(productInfoTableRow);
+		int rowAHeight = viewHeight(productNameHeaderTableRow);
+		int rowBHeight = viewHeight(productInfoTableRow);
 
 		TableRow tableRow = rowAHeight < rowBHeight ? productNameHeaderTableRow : productInfoTableRow;
 		int finalHeight = rowAHeight > rowBHeight ? rowAHeight : rowBHeight;
 
-		this.matchLayoutHeight(tableRow, finalHeight);
+		matchLayoutHeight(tableRow, finalHeight);
 	}
 	
 	void getTableRowHeaderCellWidth(){
 		
-		int tableAChildCount = ((TableRow)this.tableA.getChildAt(0)).getChildCount();
-		int tableBChildCount = ((TableRow)this.tableB.getChildAt(0)).getChildCount();;
+		int dateAndTimeHeaderCount = ((TableRow)dateAndTimeHeaderTable.getChildAt(0)).getChildCount();
+		int eventInfoHeaderCount = ((TableRow)eventInfoHeaderTable.getChildAt(0)).getChildCount();;
 		
-		for(int x=0; x<(tableAChildCount+tableBChildCount); x++){
+		for(int x = 0; x < (dateAndTimeHeaderCount+eventInfoHeaderCount); x++){
 			
-			if(x==0){
-				this.headerCellsWidth[x] = this.viewWidth(((TableRow)this.tableA.getChildAt(0)).getChildAt(x));
-			}else{
-				this.headerCellsWidth[x] = this.viewWidth(((TableRow)this.tableB.getChildAt(0)).getChildAt(x-1));
+			if (x == 0)
+			{
+				headerCellsWidth[x] = viewWidth(((TableRow)dateAndTimeHeaderTable.getChildAt(0)).getChildAt(x));
+			}
+			else
+			{
+				headerCellsWidth[x] = viewWidth(((TableRow)eventInfoHeaderTable.getChildAt(0)).getChildAt(x-1));
 			}
 			
 		}
 	}
 	
-	// resize body table row height
 	void resizeBodyTableRowHeight(){
 		
-		int tableC_ChildCount = this.tableC.getChildCount();
+		int dateAndTimeTableCount = dateAndTimeTable.getChildCount();
 		
-		for(int x=0; x<tableC_ChildCount; x++){
-		
-			TableRow productNameHeaderTableRow = (TableRow) this.tableC.getChildAt(x);
-			TableRow productInfoTableRow = (TableRow)  this.tableD.getChildAt(x);
+		for (int x = 0; x < dateAndTimeTableCount; x++)
+		{		
+			TableRow productNameHeaderTableRow = (TableRow) dateAndTimeTable.getChildAt(x);
+			TableRow productInfoTableRow = (TableRow) eventInfoTable.getChildAt(x);
 	
-			int rowAHeight = this.viewHeight(productNameHeaderTableRow);
-			int rowBHeight = this.viewHeight(productInfoTableRow);
+			int rowAHeight = viewHeight(productNameHeaderTableRow);
+			int rowBHeight = viewHeight(productInfoTableRow);
 	
 			TableRow tableRow = rowAHeight < rowBHeight ? productNameHeaderTableRow : productInfoTableRow;
 			int finalHeight = rowAHeight > rowBHeight ? rowAHeight : rowBHeight;
 
-			this.matchLayoutHeight(tableRow, finalHeight);		
+			matchLayoutHeight(tableRow, finalHeight);		
 		}
 		
 	}
 	
-	// match all height in a table row
-	// to make a standard TableRow height
+	// make a standard TableRow height
 	private void matchLayoutHeight(TableRow tableRow, int height) {
 		
 		int tableRowChildCount = tableRow.getChildCount();
 		
 		// if a TableRow has only 1 child
-		if(tableRow.getChildCount()==1){
+		if (tableRow.getChildCount() == 1){
 			
 			View view = tableRow.getChildAt(0);
 			TableRow.LayoutParams params = (TableRow.LayoutParams) view.getLayoutParams();
@@ -399,16 +387,15 @@ public class TableMainLayout extends RelativeLayout {
 			
 			TableRow.LayoutParams params = (TableRow.LayoutParams) view.getLayoutParams();
 
-			if (!isTheHeighestLayout(tableRow, x)) {
+			if (!isHighestLayout(tableRow, x)) {
 				params.height = height - (params.bottomMargin + params.topMargin);
 				return;
 			}
 		}
-
 	}
 
 	// check if the view has the highest height in a TableRow
-	private boolean isTheHeighestLayout(TableRow tableRow, int layoutPosition) {
+	private boolean isHighestLayout(TableRow tableRow, int layoutPosition) {
 		
 		int tableRowChildCount = tableRow.getChildCount();
 		int heighestViewPosition = -1;
@@ -416,7 +403,7 @@ public class TableMainLayout extends RelativeLayout {
 
 		for (int x = 0; x < tableRowChildCount; x++) {
 			View view = tableRow.getChildAt(x);
-			int height = this.viewHeight(view);
+			int height = viewHeight(view);
 
 			if (viewHeight < height) {
 				heighestViewPosition = x;
@@ -439,10 +426,9 @@ public class TableMainLayout extends RelativeLayout {
 		return view.getMeasuredWidth();
 	}
 
-	// horizontal scroll view custom class
-	class MyHorizontalScrollView extends HorizontalScrollView{
+	class CustomHorizontalScrollView extends HorizontalScrollView{
 
-		public MyHorizontalScrollView(Context context) {
+		public CustomHorizontalScrollView(Context context) {
 			super(context);
 		}
 		
@@ -450,19 +436,22 @@ public class TableMainLayout extends RelativeLayout {
 		protected void onScrollChanged(int l, int t, int oldl, int oldt) {
 			String tag = (String) this.getTag();
 			
-			if(tag.equalsIgnoreCase("horizontal scroll view b")){
-				horizontalScrollViewD.scrollTo(l, 0);
-			}else{
-				horizontalScrollViewB.scrollTo(l, 0);
+			//TODO: String matching is evil, fix this
+			if (tag.equalsIgnoreCase("eventInfoHeaderHorizontalScrollView"))
+			{
+				eventInfoTableHorizontalScrollView.scrollTo(l, 0);
+			}
+			else
+			{
+				eventInfoHeaderHorizontalScrollView.scrollTo(l, 0);
 			}
 		}
 		
 	}
 
-	// scroll view custom class
-	class MyScrollView extends ScrollView{
+	class CustomScrollView extends ScrollView{
 
-		public MyScrollView(Context context) {
+		public CustomScrollView(Context context) {
 			super(context);
 		}
 		
@@ -471,10 +460,14 @@ public class TableMainLayout extends RelativeLayout {
 			
 			String tag = (String) this.getTag();
 			
-			if(tag.equalsIgnoreCase("scroll view c")){
-				scrollViewD.scrollTo(0, t);
-			}else{
-				scrollViewC.scrollTo(0,t);
+			//TODO: String matching is evil, fix this
+			if (tag.equalsIgnoreCase("dateAndTimeTableScrollView"))
+			{
+				eventInfoTableScrollView.scrollTo(0, t);
+			}
+			else
+			{
+				dateAndTimeTableScrollView.scrollTo(0 , t);
 			}
 		}
 	}
@@ -483,22 +476,25 @@ public class TableMainLayout extends RelativeLayout {
 	  	
     	Document doc;
     	
-  	  @Override
-  	  protected String doInBackground(Void... params) {
-  	    String title = "";
-  	    try {    	    	
-  	      doc = Jsoup.connect(mUrl).get();
-  	    } catch (IOException e) {
-  	      e.printStackTrace();
-  	    }
-  	    return title;   
-  	  } 
+  	  	@Override
+  	  	protected String doInBackground(Void... params) {
+  	  		String title = "";
+  	  		try 
+  	  		{    	    	
+  	  			doc = Jsoup.connect(mUrl).get();
+  	  		} 
+  	  		catch (IOException e) 
+  	  		{
+  	  			e.printStackTrace();
+  	  		}
+  	  		return title;   
+  	  	} 
 
-  	  @SuppressLint("NewApi") @Override
-  	  protected void onPostExecute(String result) {        
+  	  	@SuppressLint("NewApi") @Override
+  	  	protected void onPostExecute(String result) {        
 		    if (doc != null)
 		    {		    	  		    	
-		    	sampleObjects.clear();
+		    	eventEntries.clear();
 		    	
 		    	Element table = doc.select("table.table").first();
 		    			    	
@@ -509,39 +505,48 @@ public class TableMainLayout extends RelativeLayout {
 		        Iterator<Element> evenIterator = evenEvents.iterator();
 		        
 		        while (oddIterator.hasNext() || evenIterator.hasNext())
-		        {		        	
+		        {		
+		        	//Even needs to be first to generate table correctly
 		        	if (evenIterator.hasNext())
 		        	{
 		        		Elements evenEventElements = evenIterator.next().getElementsByTag("td");
 		        		if (evenEventElements.first()!= null && !evenEventElements.first().text().isEmpty())
 		        		{
-				        	String mDateAndTime = "";
-				        	String mEventTitleAtVenue = "";
-				        	String mTags = "";
-				        	String mPriceAndAge = "";
-				        	String mOrganizers = "";
-				        	String mLink1 = "";
-				        	String mLink2 = "";
-				        	
+				        	String dateAndTime = "";
+				        	String eventTitleAtVenue = "";
+				        	String tags = "";
+				        	String priceAndAge = "";
+				        	String organizers = "";
+				        	String facebookLink = "";
+				        	String tixPageLink = "";
+				        	boolean hadLinkInTitle = false;
 		        			int i = 0;
 		        			
 	  		  		    	for (Element evenEventElement : evenEventElements)
 	  		  		    	{	
 	  		  		    		if (i == 0)
-  		  		    				mDateAndTime = evenEventElement.text(); 
+  		  		    				dateAndTime = evenEventElement.text(); 
   		  		    			if (i == 1)
   		  		    			{
-  		  		    				mEventTitleAtVenue = evenEventElement.text();
-  		  		    				mLink1 = evenEventElement.select("a").first().attr("href");
+  		  		    				eventTitleAtVenue = evenEventElement.text();
+  		  		    				//Assume this is the facebook link for now
+  		  		    				facebookLink = evenEventElement.select("a").first().attr("href");
+  		  		    				hadLinkInTitle = true;
   		  		    			}
   		  		    			if (i == 2)
-  		  		    				mTags = evenEventElement.text(); 
+  		  		    				tags = evenEventElement.text(); 
   		  		    			if (i == 3)
-  		  		    				mPriceAndAge = evenEventElement.text();
+  		  		    				priceAndAge = evenEventElement.text();
   		  		    			if (i == 4)
-  		  		    				mOrganizers = evenEventElement.text(); 
+  		  		    				organizers = evenEventElement.text(); 
   		  		    			if (i == 5 && evenEventElement.select("a").first() != null)
-  		  		    				mLink2 = evenEventElement.select("a").first().attr("href");
+  		  		    				if (hadLinkInTitle)
+  		  		    				{
+  		  		    					//If there are two links, first one was tixPageLink
+  		  		    					tixPageLink = facebookLink;
+  		  		    					//This one is facebook link
+  		  		    					facebookLink = evenEventElement.select("a").first().attr("href");
+  		  		    				}
 	  		  		    		
 	  		  		    		i++;
 	  		  		    	}
@@ -550,52 +555,59 @@ public class TableMainLayout extends RelativeLayout {
 	  		  		    	
 	  		  		    	for (String musicSelection : musicSelections)
 	  		  		    	{
-	  		  		    		if (mTags.contains(musicSelection))
+	  		  		    		if (tags.contains(musicSelection))
 	  		  		    			break;
 	  		  		    		wouldEnjoyEvent = false;
 	  		  		    	}
 	  		  		    	
 	  		  		    	if (wouldEnjoyEvent)
 	  		  		    	{
-	  		  		    		SampleObject sampleObject = new SampleObject(
-	  		  		    				mDateAndTime, mEventTitleAtVenue, mTags,
-	  		  		    				mPriceAndAge, mOrganizers, mLink1, mLink2);		        		
-	  		  		    		sampleObjects.add(sampleObject);
+	  		  		    		EventEntry event = new EventEntry(
+	  		  		    				dateAndTime, eventTitleAtVenue, tags,
+	  		  		    				priceAndAge, organizers, facebookLink, tixPageLink);		        		
+	  		  		    		eventEntries.add(event);
 	  		  		    	}
+		        		}
 		        	}
-		        }
 		        	if (oddIterator.hasNext())
 		        	{
 		        		Elements oddEventElements = oddIterator.next().getElementsByTag("td");
 		        		if (oddEventElements.first()!= null && !oddEventElements.first().text().isEmpty())
 		        		{
-				        	String mDateAndTime = "";
-				        	String mEventTitleAtVenue = "";
-				        	String mTags = "";
-				        	String mPriceAndAge = "";
-				        	String mOrganizers = "";
-				        	String mLink1 = "";
-				        	String mLink2 = "";
-
+				        	String dateAndTime = "";
+				        	String eventTitleAtVenue = "";
+				        	String tags = "";
+				        	String priceAndAge = "";
+				        	String organizers = "";
+				        	String facebookLink = "";
+				        	String tixPageLink = "";
+				        	boolean hadLinkInTitle = false;
 							int j = 0;
 		        			
 	  		  		    	for (Element oddEventElement : oddEventElements)
 	  		  		    	{	
 	  		  		    		if (j == 0)
-  		  		    				mDateAndTime = oddEventElement.text(); 
+  		  		    				dateAndTime = oddEventElement.text(); 
   		  		    			if (j == 1)
   		  		    			{
-  		  		    				mEventTitleAtVenue = oddEventElement.text();
-  		  		    				mLink1 = oddEventElement.select("a").first().attr("href");
+  		  		    				eventTitleAtVenue = oddEventElement.text();
+  		  		    				facebookLink = oddEventElement.select("a").first().attr("href");
+  		  		    				hadLinkInTitle = true;
   		  		    			}
   		  		    			if (j == 2)
-  		  		    				mTags = oddEventElement.text();  
+  		  		    				tags = oddEventElement.text();  
   		  		    			if (j == 3)
-  		  		    				mPriceAndAge = oddEventElement.text();
+  		  		    				priceAndAge = oddEventElement.text();
   		  		    			if (j == 4)
-  		  		    				mOrganizers = oddEventElement.text();  
+  		  		    				organizers = oddEventElement.text();  
   		  		    			if (j == 5 && oddEventElement.select("a").first() != null)
-  		  		    				mLink2 = oddEventElement.select("a").first().attr("href");
+  		  		    				if (hadLinkInTitle)
+  		  		    				{
+  		  		    					//If there are two links, first one was tixPageLink
+  		  		    					tixPageLink = facebookLink;
+  		  		    					//This one is facebook link
+  		  		    					facebookLink = oddEventElement.select("a").first().attr("href");
+  		  		    				}
 	  		  		    			  		    		
 	  		  		    		j++;
 	  		  		    	}
@@ -604,21 +616,21 @@ public class TableMainLayout extends RelativeLayout {
 	  		  		    	
 	  		  		    	for (String musicSelection : musicSelections)
 	  		  		    	{
-	  		  		    		if (mTags.contains(musicSelection))
+	  		  		    		if (tags.contains(musicSelection))
 	  		  		    			break;
 	  		  		    		wouldEnjoyEvent = false;
 	  		  		    	}
 	  		  		    	
 	  		  		    	if (wouldEnjoyEvent)
 	  		  		    	{
-	  		  		    		SampleObject sampleObject = new SampleObject(
-			  		  	        	mDateAndTime,
-			  			        	mEventTitleAtVenue,
-			  			        	mTags,
-			  			        	mPriceAndAge,
-			  			        	mOrganizers,
-			  			        	mLink1, mLink2);		        		
-				        		sampleObjects.add(sampleObject);
+	  		  		    		EventEntry event = new EventEntry(
+			  		  	        	dateAndTime,
+			  			        	eventTitleAtVenue,
+			  			        	tags,
+			  			        	priceAndAge,
+			  			        	organizers,
+			  			        	facebookLink, tixPageLink);		        		
+				        		eventEntries.add(event);
 	  		  		    	}
 		        		}
 		        	}  		        	
@@ -626,6 +638,6 @@ public class TableMainLayout extends RelativeLayout {
 		        refreshTables();
 		    }
 		    else Log.e("JSOUP", "DOC WAS NULL");
-  	  }
+  	  	}
   	}
 }
